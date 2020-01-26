@@ -1,0 +1,26 @@
+<ion-grid>
+  <ion-row>
+    <ion-col>
+      <ion-avatar>
+        <img [src]="contact.photo">
+      </ion-avatar>
+    </ion-col>
+    <ion-col class="ion-align-self-center">
+      <ion-row>
+        <ion-col size="12">
+          {{ contact.name }}
+        </ion-col>
+        <ion-col size="12">
+          {{ contact.phone }}
+        </ion-col>
+      </ion-row>
+    </ion-col>
+    <ion-col class="ion-align-self-center" size="auto" (click)="removeContact()" >
+      <ion-row>
+        <ion-col>
+          <ion-icon name="trash" ></ion-icon>
+        </ion-col>
+      </ion-row>
+    </ion-col>
+  </ion-row>
+</ion-grid>

@@ -1,0 +1,34 @@
+<app-loading></app-loading>
+
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="end">
+      <ion-icon class="icon-sync" name="sync" size="large" (click)="getBkp()"></ion-icon>
+    </ion-buttons>
+    <ion-title class="ion-padding-vertical">
+      Lista Telefonica
+    </ion-title>
+    
+    
+  </ion-toolbar>
+  
+  <ion-toolbar>
+    <ion-searchbar placeholder="Procurar" (ionChange)="onSearch($event)"></ion-searchbar>
+    
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="ion-padding">
+    <ion-card *ngFor="let contact of resultContacts; index as i">
+      <app-contact-tile [contact]="contact" (removeContactEvent)="removeContact($event)"></app-contact-tile>
+    </ion-card>
+  </div>
+  
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button>
+      <ion-icon name="add" [routerLink]="'/home/add-contact/'"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+  
+</ion-content>

@@ -1,0 +1,40 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Adicionar novo contato</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-card>
+    <form [formGroup]="form">
+      <ion-grid>
+        <ion-row>
+          <ion-col></ion-col>
+          <ion-col class="ion-margin ion-align-self-center" size="auto">
+            <ion-avatar (click)="galeryOrCamera()">
+              <img *ngIf="imgProfile"
+                [src]="imgProfile.photo" />
+              <ion-img *ngIf="!imgProfile" src="assets/imgs/user.png" ></ion-img>
+            </ion-avatar>
+          </ion-col>
+          <ion-col></ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col>
+            <ion-item color="white">
+              <ion-input autocapitalize="sentences" name="name" type="text" class="form-control" formControlName="name"
+                placeholder="Nome"></ion-input>
+            </ion-item>
+            <ion-item color="white">
+              <ion-input formControlName="phone" type="tel"  placeholder="Telefone" [brmasker]="{phone: true}"></ion-input>
+            </ion-item>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </form>
+  </ion-card>
+  <ion-button expand="block" color="primary" class="ion-margin" [disabled]="form.invalid" (click)="submit()">Salvar novo contato</ion-button>
+</ion-content>
