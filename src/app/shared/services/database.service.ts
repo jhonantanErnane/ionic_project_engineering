@@ -1,9 +1,7 @@
 import { Injectable } from '@angular/core';
 import { SQLite, SQLiteObject } from '@ionic-native/sqlite/ngx';
-import { SQLitePorter } from '@ionic-native/sqlite-porter/ngx';
-import { Platform, NavController } from '@ionic/angular';
+import { Platform } from '@ionic/angular';
 import { BehaviorSubject } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
 import { Contact } from '../models/contact';
 import { GenericResponse } from '../models/generic.response';
 import { AppStateService } from './appstate.service';
@@ -22,8 +20,11 @@ export class DatabaseService {
     private sqLite: SQLite,
     private appState: AppStateService,
     private gAlert: GenericAlertService,
-    ) {
+  ) {
 
+    /**
+     * Aguarda a plataforma ficar pronta, para inicializar o banco local
+     */
     this.platform.ready().then(() => {
       this.sqLite.create({
         name: 'phonebook.db',
@@ -40,7 +41,7 @@ export class DatabaseService {
    * Inicializa o banco de dados
    */
   private async initDB() {
-    const sql = 'CREATE TABLE IF NOT EXISTS contacts(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, phone TEXT, photo TEXT, wasSync BOOLEAN, active BOOLEAN);';
+    const sql = 'CREATE TABLE IF NOT EXISTS contacts(id INTEGER PRIMARY KEY AUTOINCREMENT, idServer TEXT, name TEXT, phone TEXT, photo TEXT, wasSync BOOLEAN, active BOOLEAN);';
     try {
       await this.database.executeSql(sql, []);
       this.dbReady.next(true);
@@ -50,6 +51,9 @@ export class DatabaseService {
     }
   }
 
+  /**
+   * Deleta TODOS os contatos localmente
+   */
   async deleteContacts() {
     const sql = `DELETE FROM ${this.TABLE_CONTACTS}`;
     try {
@@ -62,7 +66,7 @@ export class DatabaseService {
   /**
    * Obtem o status do banco, se está pronto ou não
    */
-  get DatabaseState() {
+  get databaseState() {
     return this.dbReady.asObservable();
   }
 
@@ -85,17 +89,17 @@ export class DatabaseService {
   }
 
   /**
-   * Adicionar contato no banco
+   * Adicionar contato no banco local
    * @param contact contato a ser adicionado no banco
    */
-  async addContact(contact: Contact): Promise<GenericResponse> {
-    const sql = `INSERT INTO ${this.TABLE_CONTACTS} (name, phone, photo, wasSync, active) VALUES('${contact.name}', '${contact.phone}', '${contact.photo}', ${false}, ${true})`;
+  async addContact(contact: Contact, setDataChange = true): Promise<GenericResponse> {
+    const sql = `INSERT INTO ${this.TABLE_CONTACTS} (idServer, name, phone, photo, wasSync, active) VALUES('${contact.idServer ? contact.idServer : null}', '${contact.name}', '${contact.phone}', '${contact.photo}', ${contact.wasSync ? contact.wasSync : false}, ${((contact.active == 0) || (contact.active == 1)) ? contact.active : true})`;
     try {
       await this.aux(sql);
-      this.appState.setDataChange(true);
-      return {successful: true};
+      this.appState.setDataChange(setDataChange);
+      return { successful: true };
     } catch (error) {
-      return {successful: false};
+      return { successful: false };
     }
   }
 
@@ -105,12 +109,12 @@ export class DatabaseService {
    * @param active contato ativo ou não
    * @param wasSync se o contato já foi sincronizado ou não
    */
-  async updateContact(idContact: number, active: boolean, wasSync: boolean): Promise<GenericResponse> {
-    const sql = `UPDATE ${this.TABLE_CONTACTS} SET active=${active}, wasSync=${wasSync} WHERE id=${idContact} `;
+  async updateContact(idContact: number, idServer: string, active: boolean | number, wasSync: boolean, dataChange: boolean): Promise<GenericResponse> {
+    const sql = `UPDATE ${this.TABLE_CONTACTS} SET active=${active}, wasSync=${wasSync}, idServer='${idServer}' WHERE id=${idContact} `;
     try {
       await this.aux(sql);
-      this.appState.setDataChange(true);
-      return {successful: true} ;
+      this.appState.setDataChange(dataChange);
+      return { successful: true };
     } catch (error) {
       return error;
     }
@@ -132,6 +136,7 @@ export class DatabaseService {
       }
       return contacts;
     } catch (error) {
+      console.log(error);
       return error;
     }
   }

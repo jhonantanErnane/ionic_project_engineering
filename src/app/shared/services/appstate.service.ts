@@ -27,6 +27,15 @@ export class AppStateService {
    */
   getDataChange$ = this.dataChange$.asObservable();
 
+  /**
+   * Gerência do estado do sincronismo
+   */
+  private syncState$ = new BehaviorSubject<boolean>(JSON.parse(localStorage.getItem('sync')));
+  /**
+   * Obter o estado do sincronismo
+   */
+  getSyncState$ = this.syncState$.asObservable();
+
   constructor() { }
 
   /**
@@ -36,6 +45,15 @@ export class AppStateService {
   setNetwork(status: boolean) {
     localStorage.setItem('network', JSON.stringify(status));
     this.network$.next(status);
+  }
+
+  /**
+   * Muda o estado do sincronismo
+   * @param status status do sincronismo, true se estiver fazendo sincronismo, e false se não estiver sincronizando
+   */
+  setSyncState(status: boolean) {
+    localStorage.setItem('sync', JSON.stringify(status));
+    this.syncState$.next(status);
   }
 
   /**

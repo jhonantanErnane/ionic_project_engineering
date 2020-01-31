@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { ImagePickerService } from 'src/app/shared/services/image-picker.service';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { PhoneValidator } from 'src/app/shared/validators/phone-validator';
@@ -12,7 +12,7 @@ import { NavController } from '@ionic/angular';
   templateUrl: './add-contact.page.html',
   styleUrls: ['./add-contact.page.scss'],
 })
-export class AddContactPage implements OnInit {
+export class AddContactPage {
   form: FormGroup;
 
   imgProfile: {
@@ -31,9 +31,9 @@ export class AddContactPage implements OnInit {
     });
   }
 
-  ngOnInit() {
-  }
-
+  /**
+   * Permite que o usuário escolha foto da galeria ou camera
+   */
   async galeryOrCamera() {
     const resp = await this.gAlert.chooseImageSource('', 'Onde gostaria de obter a imagem?');
     if (resp) {
@@ -41,16 +41,23 @@ export class AddContactPage implements OnInit {
     }
   }
 
+  /**
+   * Função para buscar a imagem, e já coloca o base64 no formulário
+   * @param source onde buscar a imagem
+   */
   private getImage(source?: string) {
     this.imageService.getImage(source)
       .then(img => {
         this.imgProfile = img;
         this.form.get('imgUrl').setValue(img.photo);
-      }, err => {
-        console.error(err);
+      }, async err => {
+        await this.gAlert.presentToastError('Ocorreu um erro ao salvar o contato, por favor tente novamente');
       });
   }
 
+  /**
+   * Com o formulário válido salva o contato localmente, e retorna para a tela principal
+   */
   submit() {
     const contact: Contact = {
       name: this.form.get('name').value,
@@ -60,7 +67,7 @@ export class AddContactPage implements OnInit {
     this.dbService.addContact(contact)
       .then(async resp => {
         if (resp.successful) {
-          await this.gAlert.presentToastSuccess('Novo contato salvo com sucesso!');
+          await this.gAlert.presentToast('Novo contato salvo com sucesso!', 'success');
           this.navController.pop();
         } else {
           await this.gAlert.presentToastError('Ocorreu um erro ao salvar o contato');

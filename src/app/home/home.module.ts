@@ -3,10 +3,8 @@ import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-
 import { HomePage } from './home.page';
 import { ContactTileModule } from '../shared/components/contact-tile/contact-tile.module';
-import { LoadingModule } from '../shared/components/loading/loading.module';
 
 @NgModule({
   imports: [
@@ -14,7 +12,6 @@ import { LoadingModule } from '../shared/components/loading/loading.module';
     FormsModule,
     IonicModule,
     ContactTileModule,
-    LoadingModule,
     RouterModule.forChild([
       {
         path: '',

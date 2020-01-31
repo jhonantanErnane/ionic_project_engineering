@@ -1,61 +1,113 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { Contact } from '../shared/models/contact';
 import { DatabaseService } from '../shared/services/database.service';
 import { GenericAlertService } from '../shared/services/generic-alert.service';
 import { SyncService } from '../shared/services/sync.service';
-import { LoadingComponent } from '../shared/components/loading/loading.component';
+import { AppStateService } from '../shared/services/appstate.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-home',
   templateUrl: 'home.page.html',
   styleUrls: ['home.page.scss'],
 })
-export class HomePage {
-  @ViewChild(LoadingComponent, { static: true }) loading: LoadingComponent;
-  private listContacts = new Array<Contact>();
+export class HomePage implements OnDestroy {
   resultContacts: Array<Contact>;
+  private listContacts = new Array<Contact>();
+  private unsub = new Subject<any>();
+  private hasConnection: boolean;
+  private isSync: boolean;
+  private dbIsReady: boolean;
+
   constructor(
     private dbService: DatabaseService,
+    private appState: AppStateService,
     private syncService: SyncService,
     private gAlert: GenericAlertService
   ) {
+
+    // Escuta as alterações de rede para poder ou não obter os contatos
+    this.appState.getNetwork$
+      .pipe(takeUntil(this.unsub))
+      .subscribe(hasConnection => this.hasConnection = hasConnection);
+
+    // Escuta o estado da sincronização
+    this.appState.getSyncState$
+      .pipe(takeUntil(this.unsub))
+      .subscribe(isSync => {
+        // se não estiver fazendo sincronismo,
+        // e o valor do sincronismo for diferente do anterior já armazenado
+        // chama a função para obter os contatos locais
+        if (!isSync && isSync !== this.isSync) {
+          this.isSync = isSync;
+          this.getContacts();
+        }
+        this.isSync = isSync;
+      });
+
+    // escuta o estado do BD local, estando pronto
+    // chama a função para obter os contatos locais
+    this.dbService.databaseState
+      .pipe(takeUntil(this.unsub))
+      .subscribe(async ready => {
+        this.dbIsReady = ready;
+        if (ready) {
+          this.getContacts();
+        }
+      });
   }
 
+  // Toda vez que entrar na pagina home, solicita a atualização local dos contatos
   ionViewDidEnter() {
-    this.dbService.DatabaseState.subscribe(async ready => {
-      if (ready) {
-        this.getContacts();
-      }
-    });
-  }
-
-  private async getContacts() {
-    this.listContacts = await this.dbService.getAllContacts();
-    this.resultContacts = this.listContacts;
-  }
-
-  async getBkp() {
-    const resp = await this.gAlert.presentAlertYesNo('Atenção!', 'Esta ação irá apagar todos os contatos offline e irá buscar todos do servidor. Gostaria realmente de fazer isso?');
-    if (resp) {
-      try {
-        await this.loading.showLoading();
-        await this.dbService.deleteContacts();
-        this.syncService.getBkp()
-          .subscribe(async listContacts => {
-            listContacts.forEach(async contact => {
-              await this.dbService.addContact(contact);
-            });
-            await this.getContacts();
-            this.loading.dismissLoading();
-            this.gAlert.presentToastSuccess('Contatos recuperados com sucesso!');
-          });
-      } catch (error) {
-        await this.gAlert.presentToastError('ocorreu um erro ao tentar restaurar seus contatos, tente novamente.');
-        this.loading.dismissLoading();
-      }
+    if (this.dbIsReady) {
+      this.getContacts();
     }
   }
 
+  /**
+   * Obtem os contatos locais, e atualiza a lista na tela
+   * @param force Força a obtenção dos contatos locais
+   */
+  private async getContacts(force?: boolean) {
+    if (!this.isSync || force) {
+      this.listContacts = await this.dbService.getAllContacts();
+      if (this.listContacts.length === 0 && this.hasConnection) {
+        this.getBkp();
+      }
+      this.resultContacts = this.listContacts;
+    }
+  }
+
+  /**
+   * Obtem o backup do servidor
+   */
+  private async getBkp() {
+    this.appState.setSyncState(true); // Liga o loading do sincronismo
+
+    this.syncService.getBkp() // Busca o backup do servidor
+      .subscribe(async listContacts => {
+
+        if (listContacts.length > 0) {
+          // Para cada contato trago na chamada salva no banco de dados local
+          listContacts.forEach(async contact => {
+            await this.dbService.addContact(contact, false);
+          });
+          // Atualiza os contatos na tela
+          await this.getContacts(true);
+          this.gAlert.presentToast('Contatos sincronizados com sucesso!', 'success'); // feedback ao usuário
+        }
+        this.appState.setSyncState(false); // Desliga o loading do sincronismo
+      }, e => {
+        this.appState.setSyncState(false); // Desliga o loading do sincronismo
+        this.gAlert.presentToastError('Ocorreu um erro ao sincronizar seus contatos'); // feedback ao usuário
+      });
+  }
+
+  /**
+   * Cada letra que o usuário digitar irá chamar essa função
+   * @param event Evento disparado pelo component do ionic, contendo o texto digitado
+   */
   async onSearch(event: any) {
     const text: string = event.detail.value;
     if (text !== '') {
@@ -65,18 +117,18 @@ export class HomePage {
     }
   }
 
+  /**
+   * Remove um usuário da lista, e já atualiza a lista na tela
+   * @param contactId ID do contato
+   */
   async removeContact(contactId: number) {
     const contact = this.resultContacts.filter(contact => contact.id === contactId)[0];
-    await this.dbService.updateContact(contact.id, false, false);
+    await this.dbService.updateContact(contact.id, contact.idServer, false, false, true);
     this.getContacts();
   }
 
-  // async addDatabase() {
-  //   // this.listContacts = await this.dbService.addContact(this.c);
-  //   // this.listContacts = await this.dbService.deleteContacts(1);
-  //   // this.listContacts = await this.dbService.searchContacts('a');
-  //   console.log(this.listContacts);
-
-  // }
-
+  ngOnDestroy(): void {
+    this.unsub.next();
+    this.unsub.complete();
+  }
 }

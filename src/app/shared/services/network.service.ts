@@ -18,7 +18,15 @@ export class NetworkService {
   ) {
     this.plt.ready().then(() => {
       this.observeStatusNet();
+      this.init();
     });
+  }
+
+  /**
+   * Informa a situação atual da conexão na primeira vez
+   */
+  private init() {
+    this.appStateService.setNetwork(this.network.type !== 'none' ? true : false);
   }
 
   /**

@@ -8,15 +8,13 @@ import { StatusBar } from '@ionic-native/status-bar/ngx';
 import { AppComponent } from './app.component';
 import { Network } from '@ionic-native/network/ngx';
 import { SQLite } from '@ionic-native/sqlite/ngx';
-import { SQLitePorter } from '@ionic-native/sqlite-porter/ngx';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('AppComponent', () => {
 
   let statusBarSpy, splashScreenSpy, platformReadySpy, platformSpy, networkSpy;
-  let sqliteSpy, sqlitePorterSpy;
+  let sqliteSpy;
   sqliteSpy = jasmine.createSpy('SQLite');
-  sqlitePorterSpy = jasmine.createSpy('SQLitePorter')
   beforeEach(async(() => {
     statusBarSpy = jasmine.createSpyObj('StatusBar', ['styleLightContent']);
     splashScreenSpy = jasmine.createSpyObj('SplashScreen', ['hide']);
@@ -32,8 +30,7 @@ describe('AppComponent', () => {
         { provide: SplashScreen, useValue: splashScreenSpy },
         { provide: Platform, useValue: platformSpy },
         { provide: Network, useValue: networkSpy },
-        { provide: SQLite, useValue: sqliteSpy },
-        { provide: SQLitePorter, useValue: sqlitePorterSpy }
+        { provide: SQLite, useValue: sqliteSpy }
       ],
     }).compileComponents();
   }));

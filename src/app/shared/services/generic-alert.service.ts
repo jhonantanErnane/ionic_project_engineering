@@ -85,11 +85,11 @@ export class GenericAlertService {
     });
   }
 
-  async presentToastSuccess(msg: string) {
+  async presentToast(msg: string, type: string) {
     const toast = await this.toastController.create({
       message: msg,
       duration: 3000,
-      color: 'success'
+      color: type
     });
     toast.present();
   }

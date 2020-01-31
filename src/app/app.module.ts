@@ -9,10 +9,10 @@ import { StatusBar } from '@ionic-native/status-bar/ngx';
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
 import { HttpClientModule } from '@angular/common/http';
-import { SQLitePorter } from '@ionic-native/sqlite-porter/ngx';
 import { SQLite } from '@ionic-native/sqlite/ngx';
 import { Network } from '@ionic-native/network/ngx';
 import { Camera } from '@ionic-native/camera/ngx';
+import { LoadingModule } from './shared/components/loading/loading.module';
 
 @NgModule({
   declarations: [
@@ -23,12 +23,12 @@ import { Camera } from '@ionic-native/camera/ngx';
     BrowserModule,
     IonicModule.forRoot(),
     AppRoutingModule,
+    LoadingModule,
     HttpClientModule
   ],
   providers: [
     StatusBar,
     SplashScreen,
-    SQLitePorter,
     Network,
     Camera,
     SQLite,

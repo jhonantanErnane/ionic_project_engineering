@@ -3,25 +3,26 @@ import { TestBed } from '@angular/core/testing';
 import { DatabaseService } from './database.service';
 import { SQLite } from '@ionic-native/sqlite/ngx';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { SQLitePorter } from '@ionic-native/sqlite-porter/ngx';
 
 describe('DatabaseService', () => {
-  let sqliteSpy, sqlitePorterSpy;
+  let sqliteSpy;
   let create = Promise.resolve();
-  let importSqlToDb = Promise.resolve();
   sqliteSpy = jasmine.createSpyObj('SQLite', { create: create })
-  sqlitePorterSpy = jasmine.createSpyObj('SQLitePorter', { importSqlToDb: importSqlToDb })
   beforeEach(() => TestBed.configureTestingModule({
     imports: [HttpClientTestingModule],
     providers: [
-      { provide: SQLite, useValue: sqliteSpy },
-      { provide: SQLitePorter, useValue: sqlitePorterSpy }
+      { provide: SQLite, useValue: sqliteSpy }
     ]
   }));
 
   it('should be created', () => {
-    const service: DatabaseService = TestBed.get(DatabaseService);
+    const service: DatabaseService = TestBed.get<DatabaseService>(DatabaseService);
     expect(service).toBeTruthy();
   });
 
+  it('Criação de usuário com sucesso', async () => {
+    const service: DatabaseService = TestBed.get(DatabaseService);
+    const resp = await service.addContact({name: 'jhonantan', phone:'(31) 99999-9999', photo: 'stringFoto'});
+    expect(resp.successful).toBeTruthy();
+  });
 });

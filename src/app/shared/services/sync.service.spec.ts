@@ -3,17 +3,14 @@ import { TestBed } from '@angular/core/testing';
 import { SyncService } from './sync.service';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { SQLite } from '@ionic-native/sqlite/ngx';
-import { SQLitePorter } from '@ionic-native/sqlite-porter/ngx';
 
 describe('SyncService', () => {
-  let sqliteSpy, sqlitePorterSpy;
+  let sqliteSpy;
   sqliteSpy = jasmine.createSpy('SQLite')
-  sqlitePorterSpy = jasmine.createSpy('SQLitePorter')
   beforeEach(() => TestBed.configureTestingModule({
     imports: [HttpClientTestingModule],
     providers: [
-      { provide: SQLite, useValue: sqliteSpy },
-      { provide: SQLitePorter, useValue: sqlitePorterSpy }
+      { provide: SQLite, useValue: sqliteSpy }
     ]
   }));
 
