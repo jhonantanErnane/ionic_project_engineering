@@ -19,6 +19,7 @@ export class HomePage implements OnDestroy {
   private hasConnection: boolean;
   private isSync: boolean;
   private dbIsReady: boolean;
+  private hasBackup = true;
 
   constructor(
     private dbService: DatabaseService,
@@ -67,13 +68,15 @@ export class HomePage implements OnDestroy {
 
   /**
    * Obtem os contatos locais, e atualiza a lista na tela
-   * @param force Força a obtenção dos contatos locais
    */
-  private async getContacts(force?: boolean) {
-    if (!this.isSync || force) {
+  private async getContacts() {
+    if (!this.isSync) {
       this.listContacts = await this.dbService.getAllContacts();
-      if (this.listContacts.length === 0 && this.hasConnection) {
-        this.getBkp();
+      if (this.hasConnection) {
+        if (this.listContacts && this.listContacts.length === 0 && this.hasBackup) {
+          this.appState.setSyncState(true); // Liga o loading do sincronismo
+          this.getBkp();
+        }
       }
       this.resultContacts = this.listContacts;
     }
@@ -83,25 +86,28 @@ export class HomePage implements OnDestroy {
    * Obtem o backup do servidor
    */
   private async getBkp() {
-    this.appState.setSyncState(true); // Liga o loading do sincronismo
+    if (this.hasBackup) {
+      this.syncService.getBkp() // Busca o backup do servidor
+        .subscribe(async listContacts => {
 
-    this.syncService.getBkp() // Busca o backup do servidor
-      .subscribe(async listContacts => {
-
-        if (listContacts.length > 0) {
-          // Para cada contato trago na chamada salva no banco de dados local
-          listContacts.forEach(async contact => {
-            await this.dbService.addContact(contact, false);
-          });
-          // Atualiza os contatos na tela
-          await this.getContacts(true);
-          this.gAlert.presentToast('Contatos sincronizados com sucesso!', 'success'); // feedback ao usuário
-        }
-        this.appState.setSyncState(false); // Desliga o loading do sincronismo
-      }, e => {
-        this.appState.setSyncState(false); // Desliga o loading do sincronismo
-        this.gAlert.presentToastError('Ocorreu um erro ao sincronizar seus contatos'); // feedback ao usuário
-      });
+          if (listContacts.length > 0) {
+            // Para cada contato trago na chamada salva no banco de dados local
+            listContacts.forEach(async contact => {
+              await this.dbService.addContact(contact, false);
+            });
+            // Atualiza os contatos na tela
+            this.appState.setSyncState(false); // Desliga o loading do sincronismo
+            await this.getContacts();
+            this.gAlert.presentToast('Contatos sincronizados com sucesso!', 'success'); // feedback ao usuário
+          } else {
+            this.hasBackup = false;
+            this.appState.setSyncState(false); // Desliga o loading do sincronismo
+          }
+        }, e => {
+          this.appState.setSyncState(false); // Desliga o loading do sincronismo
+          this.gAlert.presentToastError('Ocorreu um erro ao sincronizar seus contatos'); // feedback ao usuário
+        });
+    }
   }
 
   /**
